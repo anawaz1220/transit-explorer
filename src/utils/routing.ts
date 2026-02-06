@@ -16,15 +16,20 @@ export async function getRouteBetweenPoints(
   try {
     const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
 
+    console.log('Fetching route from OSRM:', { origin, destination });
+
     const response = await fetch(url);
 
     if (!response.ok) {
+      console.error('OSRM routing request failed with status:', response.status);
       throw new Error('Routing request failed');
     }
 
     const data = await response.json();
+    console.log('OSRM response:', data);
 
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+      console.warn('OSRM returned no routes:', data);
       return null;
     }
 

@@ -42,10 +42,15 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
       }
     );
 
-    if (!response.ok) throw new Error('Reverse geocoding failed');
+    if (!response.ok) {
+      console.warn('Reverse geocoding failed with status:', response.status);
+      throw new Error('Reverse geocoding failed');
+    }
 
     const data = await response.json();
-    return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    const address = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    console.log('Reverse geocode success:', address);
+    return address;
   } catch (error) {
     console.error('Reverse geocoding error:', error);
     return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;

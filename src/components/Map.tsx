@@ -33,6 +33,7 @@ interface MapProps {
   onResetMap: () => void;
   shouldResetMapView: boolean;
   onMapViewReset: () => void;
+  onPlannedRouteClick: () => void;
 }
 
 export default function Map({
@@ -52,6 +53,7 @@ export default function Map({
   onResetMap,
   shouldResetMapView,
   onMapViewReset,
+  onPlannedRouteClick,
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -120,41 +122,18 @@ export default function Map({
       },
       filter: ['==', 'Name', ''],
     });
-
-    // Add click handlers
-    map.current.on('click', 'routes-layer', (e) => {
-      if (e.features && e.features[0]) {
-        const routeId = e.features[0].properties?.Route;
-        const route = routes.find((r) => r.properties.Route === routeId);
-        if (route) onRouteClick(route);
-      }
-    });
-
-    map.current.on('click', 'stops-layer', (e) => {
-      if (e.features && e.features[0]) {
-        const stopName = e.features[0].properties?.Name;
-        const stop = stops.find((s) => s.properties.Name === stopName);
-        if (stop) onStopClick(stop);
-      }
-    });
-
-    // Change cursor on hover
-    map.current.on('mouseenter', 'routes-layer', () => {
-      map.current!.getCanvas().style.cursor = 'pointer';
-    });
-    map.current.on('mouseleave', 'routes-layer', () => {
-      map.current!.getCanvas().style.cursor = '';
-    });
-    map.current.on('mouseenter', 'stops-layer', () => {
-      map.current!.getCanvas().style.cursor = 'pointer';
-    });
-    map.current.on('mouseleave', 'stops-layer', () => {
-      map.current!.getCanvas().style.cursor = '';
-    });
   };
 
   useEffect(() => {
     if (!mapContainer.current) return;
+
+    // Check if Mapbox token is available
+    if (!mapboxgl.accessToken) {
+      console.error('Mapbox token is missing! Please check your environment variables.');
+      return;
+    }
+
+    console.log('Initializing map with token:', mapboxgl.accessToken.substring(0, 10) + '...');
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -219,6 +198,79 @@ export default function Map({
       setTimeout(() => setMapLoaded(true), 100);
     });
   };
+
+  // Set up click event handlers for routes and stops
+  useEffect(() => {
+    if (!mapLoaded || !map.current) return;
+
+    // Route click handler
+    const handleRouteClick = (e: mapboxgl.MapMouseEvent) => {
+      try {
+        e.preventDefault();
+        if (e.features && e.features[0]) {
+          const routeId = e.features[0].properties?.Route;
+          const route = routes.find((r) => r.properties.Route === routeId);
+          if (route) {
+            console.log('Route clicked:', routeId);
+            onRouteClick(route);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling route click:', error);
+      }
+    };
+
+    // Stop click handler
+    const handleStopClick = (e: mapboxgl.MapMouseEvent) => {
+      try {
+        e.preventDefault();
+        if (e.features && e.features[0]) {
+          const stopName = e.features[0].properties?.Name;
+          const stop = stops.find((s) => s.properties.Name === stopName);
+          if (stop) {
+            console.log('Stop clicked:', stopName);
+            onStopClick(stop);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling stop click:', error);
+      }
+    };
+
+    // Cursor handlers
+    const handleRouteMouseEnter = () => {
+      if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+    };
+    const handleRouteMouseLeave = () => {
+      if (map.current) map.current.getCanvas().style.cursor = '';
+    };
+    const handleStopMouseEnter = () => {
+      if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+    };
+    const handleStopMouseLeave = () => {
+      if (map.current) map.current.getCanvas().style.cursor = '';
+    };
+
+    // Add event listeners
+    map.current.on('click', 'routes-layer', handleRouteClick);
+    map.current.on('click', 'stops-layer', handleStopClick);
+    map.current.on('mouseenter', 'routes-layer', handleRouteMouseEnter);
+    map.current.on('mouseleave', 'routes-layer', handleRouteMouseLeave);
+    map.current.on('mouseenter', 'stops-layer', handleStopMouseEnter);
+    map.current.on('mouseleave', 'stops-layer', handleStopMouseLeave);
+
+    // Cleanup
+    return () => {
+      if (map.current) {
+        map.current.off('click', 'routes-layer', handleRouteClick);
+        map.current.off('click', 'stops-layer', handleStopClick);
+        map.current.off('mouseenter', 'routes-layer', handleRouteMouseEnter);
+        map.current.off('mouseleave', 'routes-layer', handleRouteMouseLeave);
+        map.current.off('mouseenter', 'stops-layer', handleStopMouseEnter);
+        map.current.off('mouseleave', 'stops-layer', handleStopMouseLeave);
+      }
+    };
+  }, [mapLoaded, routes, stops, onRouteClick, onStopClick]);
 
   // Update routes on map
   useEffect(() => {
@@ -285,11 +337,16 @@ export default function Map({
     if (!map.current) return;
 
     const handleMapClick = async (e: mapboxgl.MapMouseEvent) => {
-      // Only handle if in selection mode
-      if (selectingFromMap) {
-        const { lng, lat } = e.lngLat;
-        const address = await reverseGeocode(lat, lng);
-        onMapSelect({ lat, lng, address });
+      try {
+        // Only handle if in selection mode
+        if (selectingFromMap) {
+          const { lng, lat } = e.lngLat;
+          console.log('Map clicked for selection:', { lng, lat, type: selectingFromMap });
+          const address = await reverseGeocode(lat, lng);
+          onMapSelect({ lat, lng, address });
+        }
+      } catch (error) {
+        console.error('Error handling map click:', error);
       }
     };
 
@@ -361,6 +418,13 @@ export default function Map({
         .addTo(map.current);
 
       markersRef.current.push(marker);
+
+      // Fly to origin location
+      map.current.flyTo({
+        center: [tempOrigin.lng, tempOrigin.lat],
+        zoom: 14,
+        duration: 1500,
+      });
     }
 
     // Add destination marker
@@ -377,6 +441,23 @@ export default function Map({
         .addTo(map.current);
 
       markersRef.current.push(marker);
+
+      // Fly to destination location if no origin (to avoid double flying)
+      if (!tempOrigin) {
+        map.current.flyTo({
+          center: [tempDestination.lng, tempDestination.lat],
+          zoom: 14,
+          duration: 1500,
+        });
+      }
+    }
+
+    // If both origin and destination exist, fit bounds to both
+    if (tempOrigin && tempDestination) {
+      const bounds = new mapboxgl.LngLatBounds();
+      bounds.extend([tempOrigin.lng, tempOrigin.lat]);
+      bounds.extend([tempDestination.lng, tempDestination.lat]);
+      map.current.fitBounds(bounds, { padding: 100, duration: 1500 });
     }
   }, [tempOrigin, tempDestination]);
 
@@ -384,46 +465,73 @@ export default function Map({
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
-    // Remove existing planned route
-    if (map.current.getSource('planned-route')) {
+    // Remove existing planned route and layers
+    if (map.current.getLayer('planned-route-layer')) {
       map.current.removeLayer('planned-route-layer');
+    }
+    if (map.current.getSource('planned-route')) {
       map.current.removeSource('planned-route');
     }
 
     if (plannedRoute) {
-      // Add route line
-      map.current.addSource('planned-route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: plannedRoute.roadRoute.coordinates,
+      try {
+        // Add route line
+        map.current.addSource('planned-route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: plannedRoute.roadRoute.coordinates,
+            },
           },
-        },
-      });
+        });
 
-      map.current.addLayer({
-        id: 'planned-route-layer',
-        type: 'line',
-        source: 'planned-route',
-        paint: {
-          'line-color': '#10b981',
-          'line-width': 5,
-          'line-opacity': 0.8,
-        },
-      });
+        map.current.addLayer({
+          id: 'planned-route-layer',
+          type: 'line',
+          source: 'planned-route',
+          paint: {
+            'line-color': '#10b981',
+            'line-width': 5,
+            'line-opacity': 0.8,
+          },
+        });
 
-      // Fit bounds to planned route
-      const bounds = new mapboxgl.LngLatBounds();
-      plannedRoute.roadRoute.coordinates.forEach((coord) => {
-        bounds.extend(coord as [number, number]);
-      });
+        // Add click handler for planned route
+        const handlePlannedRouteClick = (e: mapboxgl.MapMouseEvent) => {
+          e.preventDefault();
+          onPlannedRouteClick();
+        };
+        map.current.on('click', 'planned-route-layer', handlePlannedRouteClick);
 
-      map.current.fitBounds(bounds, { padding: 100, duration: 1000 });
+        // Change cursor on hover for planned route
+        const handleMouseEnter = () => {
+          if (map.current) {
+            map.current.getCanvas().style.cursor = 'pointer';
+          }
+        };
+        const handleMouseLeave = () => {
+          if (map.current) {
+            map.current.getCanvas().style.cursor = '';
+          }
+        };
+        map.current.on('mouseenter', 'planned-route-layer', handleMouseEnter);
+        map.current.on('mouseleave', 'planned-route-layer', handleMouseLeave);
+
+        // Fit bounds to planned route
+        const bounds = new mapboxgl.LngLatBounds();
+        plannedRoute.roadRoute.coordinates.forEach((coord) => {
+          bounds.extend(coord as [number, number]);
+        });
+
+        map.current.fitBounds(bounds, { padding: 100, duration: 1000 });
+      } catch (error) {
+        console.error('Error adding planned route to map:', error);
+      }
     }
-  }, [plannedRoute, mapLoaded]);
+  }, [plannedRoute, mapLoaded, onPlannedRouteClick]);
 
   // Highlight hovered or selected stop
   useEffect(() => {

@@ -18,6 +18,8 @@ interface SidebarProps {
   mapSelectedOrigin: LocationPoint | null;
   mapSelectedDestination: LocationPoint | null;
   onClose?: () => void;
+  onShowToast: (message: string, type: 'success' | 'info' | 'error') => void;
+  onSetOrigin: (location: LocationPoint) => void;
 }
 
 export default function Sidebar({
@@ -34,6 +36,8 @@ export default function Sidebar({
   mapSelectedOrigin,
   mapSelectedDestination,
   onClose,
+  onShowToast,
+  onSetOrigin,
 }: SidebarProps) {
   // Section visibility - Trip Planner expanded by default, others collapsed
   const [showTripPlanner, setShowTripPlanner] = useState(true);
@@ -108,9 +112,15 @@ export default function Sidebar({
 
   // Use current location as origin
   const handleUseCurrentLocation = async () => {
+    onShowToast('Getting your current location...', 'info');
     const location = await getCurrentLocation();
     if (location) {
       handleSelectOrigin(location);
+      // Also update the parent component's state so the map flies to location
+      onSetOrigin(location);
+      onShowToast('Current location set successfully!', 'success');
+    } else {
+      onShowToast('Unable to get your location. Please check your browser permissions.', 'error');
     }
   };
 

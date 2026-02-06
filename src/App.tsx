@@ -15,7 +15,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [infoDrawerOpen, setInfoDrawerOpen] = useState(false);
-  const [infoDrawerType, setInfoDrawerType] = useState<'route' | 'stop' | null>(null);
+  const [infoDrawerType, setInfoDrawerType] = useState<'route' | 'stop' | 'planned-route' | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<RouteFeature | null>(null);
   const [selectedStop, setSelectedStop] = useState<StopFeature | null>(null);
 
@@ -132,6 +132,23 @@ function App() {
     setSelectingFromMap(null);
   };
 
+  const handleShowToast = (message: string, type: 'success' | 'info' | 'error') => {
+    setToast({ message, type });
+  };
+
+  const handlePlannedRouteClick = () => {
+    if (plannedRoute) {
+      setSelectedRoute(null);
+      setSelectedStop(null);
+      setInfoDrawerType('planned-route');
+      setInfoDrawerOpen(true);
+    }
+  };
+
+  const handleSetOrigin = (location: LocationPoint) => {
+    setTempOrigin(location);
+  };
+
   const handleResetMap = () => {
     // Reset all filters
     const routeNumbers = new Set(routes.map((r) => r.properties.Route));
@@ -180,6 +197,8 @@ function App() {
           mapSelectedOrigin={tempOrigin}
           mapSelectedDestination={tempDestination}
           onClose={() => setIsSidebarOpen(false)}
+          onShowToast={handleShowToast}
+          onSetOrigin={handleSetOrigin}
         />
         <div className="flex-1 relative">
           <Map
@@ -199,6 +218,7 @@ function App() {
             onResetMap={handleResetMap}
             shouldResetMapView={shouldResetMapView}
             onMapViewReset={() => setShouldResetMapView(false)}
+            onPlannedRouteClick={handlePlannedRouteClick}
           />
         </div>
       </div>
@@ -208,6 +228,7 @@ function App() {
         route={selectedRoute}
         stop={selectedStop}
         stops={stops}
+        plannedRoute={plannedRoute}
         onClose={() => setInfoDrawerOpen(false)}
         onStopHover={setHoveredStop}
       />

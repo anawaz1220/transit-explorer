@@ -1,13 +1,15 @@
-import { X, MapPin, Clock } from 'lucide-react';
-import { RouteFeature, StopFeature } from '../types';
+import { X, MapPin, Clock, Navigation, Flag } from 'lucide-react';
+import { RouteFeature, StopFeature, PlannedRoute } from '../types';
 import { getRouteColor } from '../utils/colors';
+import { formatDistance, formatDuration } from '../utils/routing';
 
 interface InfoDrawerProps {
   isOpen: boolean;
-  type: 'route' | 'stop' | null;
+  type: 'route' | 'stop' | 'planned-route' | null;
   route: RouteFeature | null;
   stop: StopFeature | null;
   stops: StopFeature[];
+  plannedRoute?: PlannedRoute | null;
   onClose: () => void;
   onStopHover?: (stop: StopFeature | null) => void;
 }
@@ -18,6 +20,7 @@ export default function InfoDrawer({
   route,
   stop,
   stops,
+  plannedRoute,
   onClose,
   onStopHover,
 }: InfoDrawerProps) {
@@ -38,17 +41,20 @@ export default function InfoDrawer({
         style={
           type === 'route' && route
             ? { backgroundColor: getRouteColor(route.properties.Route), color: 'white' }
+            : type === 'planned-route'
+            ? { backgroundColor: '#10b981', color: 'white' }
             : {}
         }
       >
         <h3 className="text-lg font-bold">
           {type === 'route' && route && `Route ${route.properties.Route}`}
           {type === 'stop' && stop && stop.properties.Name}
+          {type === 'planned-route' && 'Your Planned Route'}
         </h3>
         <button
           onClick={onClose}
           className={`p-1 rounded-lg transition-colors ${
-            type === 'route'
+            type === 'route' || type === 'planned-route'
               ? 'hover:bg-white/20'
               : 'hover:bg-gray-100'
           }`}
@@ -172,6 +178,77 @@ export default function InfoDrawer({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {type === 'planned-route' && plannedRoute && (
+          <div>
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                <Navigation size={18} className="text-green-600" />
+                Origin
+              </h4>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-gray-700">
+                  {plannedRoute.origin.address ||
+                    `${plannedRoute.origin.lat.toFixed(4)}, ${plannedRoute.origin.lng.toFixed(4)}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                <Flag size={18} className="text-red-600" />
+                Destination
+              </h4>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-gray-700">
+                  {plannedRoute.destination.address ||
+                    `${plannedRoute.destination.lat.toFixed(4)}, ${plannedRoute.destination.lng.toFixed(4)}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-800 mb-2">Distance & Time</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Distance</p>
+                  <p className="text-lg font-bold text-gray-800">
+                    {formatDistance(plannedRoute.roadRoute.distance)}
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Duration</p>
+                  <p className="text-lg font-bold text-gray-800">
+                    {formatDuration(plannedRoute.roadRoute.duration)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {plannedRoute.nearestOriginStop && (
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">Closest Bus Route</h4>
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: getRouteColor(plannedRoute.nearestOriginStop.properties.route) }}
+                    />
+                    <span className="font-medium text-gray-800">
+                      Route {plannedRoute.nearestOriginStop.properties.route}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin size={16} className="text-gray-500 mt-1 flex-shrink-0" />
+                    <p className="text-sm text-gray-600">
+                      {plannedRoute.nearestOriginStop.properties.Name}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
