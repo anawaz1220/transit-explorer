@@ -86,14 +86,23 @@ src/
 
 **Flow**:
 1. User enters origin and destination (via search, map click, or current location)
-2. `handlePlanRoute()` in App.tsx calls:
-   - `getRouteBetweenPoints()` - OSRM API for road route
+2. User can select Walking (default) or Driving mode
+3. `handlePlanRoute()` in App.tsx calls:
+   - `getRouteBetweenPoints()` - Mapbox Directions API for road/walking route
    - `findNearestStop()` - Haversine distance to find nearest bus stops
-3. Creates `PlannedRoute` object with all data
-4. Map renders green route line
-5. Map auto-fits bounds to show entire route
+4. Creates `PlannedRoute` object with all data including mode
+5. Map renders green route line
+6. Map auto-fits bounds to show entire route
 
-**External API**: `https://router.project-osrm.org/route/v1/driving/`
+**External API**: Mapbox Directions API
+- Walking: `https://api.mapbox.com/directions/v5/mapbox/walking/...`
+- Driving: `https://api.mapbox.com/directions/v5/mapbox/driving/...`
+
+**Important**:
+- Walking and driving use completely separate route geometries
+- Walking routes use pedestrian paths, sidewalks, crosswalks
+- Driving routes use roads optimized for cars
+- Route is recalculated when mode changes (not just time adjustment)
 
 ### 3. Interactive Map
 

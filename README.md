@@ -62,18 +62,18 @@ If you encounter issues with map clicking or routes not working on Vercel:
 
 1. **Check Browser Console**: Open Developer Tools and check for any errors
 2. **Verify Environment Variable**: Ensure `VITE_MAPBOX_TOKEN` is set correctly in Vercel
-3. **Check CORS Issues**: The app uses external APIs (Nominatim for geocoding, OSRM for routing)
+3. **Check CORS Issues**: The app uses external APIs (Nominatim for geocoding, Mapbox Directions for routing)
 4. **Clear Cache**: After updating environment variables, trigger a new deployment
 5. **Check Logs**: Use `console.log` statements are added throughout the app for debugging
 
 ### API Services Used
 
-The application relies on these free external services:
+The application relies on these external services:
 - **Mapbox GL JS**: Map rendering (requires API token)
-- **OpenStreetMap Nominatim**: Address geocoding and reverse geocoding
-- **OSRM**: Route calculation between points
+- **Mapbox Directions API**: Walking and driving route calculation (uses same token)
+- **OpenStreetMap Nominatim**: Address geocoding and reverse geocoding (free)
 
-Make sure these services are accessible from your deployment environment.
+Make sure these services are accessible from your deployment environment and that your Mapbox token is set correctly.
 
 ## Data Files
 

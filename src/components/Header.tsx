@@ -20,7 +20,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             <img src="/bus-icon.svg" alt="Bus Icon" className="w-10 h-10" />
             <div>
               <h1 className="text-xl font-bold tracking-tight">
-                Monterey Transit Explorer
+                Monterey Transit Explorer - Example
               </h1>
               <p className="text-xs text-primary-100 hidden sm:block">
                 Interactive Bus Route Navigation

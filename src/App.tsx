@@ -4,7 +4,7 @@ import Sidebar from './components/Sidebar';
 import Map from './components/Map';
 import InfoDrawer from './components/InfoDrawer';
 import Toast from './components/Toast';
-import { RouteFeature, StopFeature, LocationPoint, RouteCollection, StopCollection, PlannedRoute } from './types';
+import { RouteFeature, StopFeature, LocationPoint, RouteCollection, StopCollection, PlannedRoute, RouteMode } from './types';
 import { findNearestStop } from './utils/routeCalculator';
 import { getRouteBetweenPoints, formatDistance, formatDuration } from './utils/routing';
 
@@ -20,6 +20,7 @@ function App() {
   const [selectedStop, setSelectedStop] = useState<StopFeature | null>(null);
 
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null);
+  const [routeMode, setRouteMode] = useState<RouteMode>('walking');
 
   const [selectingFromMap, setSelectingFromMap] = useState<'origin' | 'destination' | null>(null);
   const [tempOrigin, setTempOrigin] = useState<LocationPoint | null>(null);
@@ -34,9 +35,12 @@ function App() {
     fetch('/data/routes.geojson')
       .then((res) => res.json())
       .then((data: RouteCollection) => {
-        setRoutes(data.features);
-        // Show all routes by default
-        const routeNumbers = new Set(data.features.map((r) => r.properties.Route));
+        // HIDE Route 40: Filter out Route 40 from the data
+        const filteredRoutes = data.features.filter((r) => r.properties.Route !== 40);
+        setRoutes(filteredRoutes);
+
+        // Show all routes by default (excluding Route 40)
+        const routeNumbers = new Set(filteredRoutes.map((r) => r.properties.Route));
         setVisibleRoutes(routeNumbers);
       })
       .catch((err) => console.error('Error loading routes:', err));
@@ -45,7 +49,9 @@ function App() {
     fetch('/data/stops.geojson')
       .then((res) => res.json())
       .then((data: StopCollection) => {
-        setStops(data.features);
+        // HIDE Route 40: Filter out stops that belong to Route 40
+        const filteredStops = data.features.filter((s) => s.properties.route !== '40');
+        setStops(filteredStops);
       })
       .catch((err) => console.error('Error loading stops:', err));
   }, []);
@@ -76,10 +82,12 @@ function App() {
     setInfoDrawerOpen(true);
   };
 
-  const handlePlanRoute = async (origin: LocationPoint, destination: LocationPoint) => {
+  const handlePlanRoute = async (origin: LocationPoint, destination: LocationPoint, mode?: RouteMode) => {
     try {
+      const selectedMode = mode || routeMode;
+
       // Get actual road-based route
-      const roadRoute = await getRouteBetweenPoints(origin, destination);
+      const roadRoute = await getRouteBetweenPoints(origin, destination, selectedMode);
 
       if (!roadRoute) {
         setToast({ message: 'Unable to find a route. Please try different locations.', type: 'error' });
@@ -96,6 +104,7 @@ function App() {
         roadRoute,
         nearestOriginStop: nearestOriginStop || undefined,
         nearestDestinationStop: nearestDestStop || undefined,
+        mode: selectedMode,
       });
 
       // Show success toast
@@ -110,6 +119,15 @@ function App() {
     } catch (error) {
       console.error('Route planning error:', error);
       setToast({ message: 'Error planning route. Please try again.', type: 'error' });
+    }
+  };
+
+  const handleRouteModeChange = async (mode: RouteMode) => {
+    setRouteMode(mode);
+
+    // If there's a planned route, recalculate it with the new mode
+    if (plannedRoute) {
+      await handlePlanRoute(plannedRoute.origin, plannedRoute.destination, mode);
     }
   };
 
@@ -199,6 +217,9 @@ function App() {
           onClose={() => setIsSidebarOpen(false)}
           onShowToast={handleShowToast}
           onSetOrigin={handleSetOrigin}
+          plannedRoute={plannedRoute}
+          routeMode={routeMode}
+          onRouteModeChange={handleRouteModeChange}
         />
         <div className="flex-1 relative">
           <Map

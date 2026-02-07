@@ -71,6 +71,8 @@ export interface PlannedRoute {
   };
   nearestOriginStop?: StopFeature;
   nearestDestinationStop?: StopFeature;
+  mode?: 'walking' | 'driving';
 }
 
 export type MapStyle = 'streets' | 'satellite';
+export type RouteMode = 'walking' | 'driving';

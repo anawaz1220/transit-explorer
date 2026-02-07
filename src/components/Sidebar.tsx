@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, ChevronUp, ChevronDown, Navigation, X } from 'lucide-react';
-import { RouteFeature, StopFeature, LocationPoint } from '../types';
+import { Search, MapPin, ChevronUp, ChevronDown, Navigation, X, PersonStanding, Car } from 'lucide-react';
+import { RouteFeature, StopFeature, LocationPoint, PlannedRoute, RouteMode } from '../types';
 import { getRouteColor } from '../utils/colors';
 import { searchAddress, getCurrentLocation } from '../utils/geocoding';
 
@@ -20,6 +20,9 @@ interface SidebarProps {
   onClose?: () => void;
   onShowToast: (message: string, type: 'success' | 'info' | 'error') => void;
   onSetOrigin: (location: LocationPoint) => void;
+  plannedRoute: PlannedRoute | null;
+  routeMode: RouteMode;
+  onRouteModeChange: (mode: RouteMode) => void;
 }
 
 export default function Sidebar({
@@ -38,6 +41,9 @@ export default function Sidebar({
   onClose,
   onShowToast,
   onSetOrigin,
+  plannedRoute,
+  routeMode,
+  onRouteModeChange,
 }: SidebarProps) {
   // Section visibility - Trip Planner expanded by default, others collapsed
   const [showTripPlanner, setShowTripPlanner] = useState(true);
@@ -287,6 +293,39 @@ export default function Sidebar({
                   Clear
                 </button>
               </div>
+
+              {/* Route Mode Switch - Only visible when route is planned */}
+              {plannedRoute && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Travel Mode
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onRouteModeChange('walking')}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border-2 transition-all ${
+                        routeMode === 'walking'
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400'
+                      }`}
+                    >
+                      <PersonStanding size={18} />
+                      <span className="font-medium">Walking</span>
+                    </button>
+                    <button
+                      onClick={() => onRouteModeChange('driving')}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border-2 transition-all ${
+                        routeMode === 'driving'
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400'
+                      }`}
+                    >
+                      <Car size={18} />
+                      <span className="font-medium">Driving</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

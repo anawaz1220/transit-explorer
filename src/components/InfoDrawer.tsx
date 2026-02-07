@@ -210,7 +210,14 @@ export default function InfoDrawer({
             </div>
 
             <div className="mb-4">
-              <h4 className="font-semibold text-gray-800 mb-2">Distance & Time</h4>
+              <h4 className="font-semibold text-gray-800 mb-2">
+                Distance & Time
+                {plannedRoute.mode && (
+                  <span className="ml-2 text-xs font-normal text-gray-500">
+                    ({plannedRoute.mode === 'walking' ? 'Walking' : 'Driving'})
+                  </span>
+                )}
+              </h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1">Distance</p>
