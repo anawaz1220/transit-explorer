@@ -193,14 +193,6 @@ function App() {
     <div className="flex flex-col h-screen">
       <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Mobile overlay */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-10 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-
         <Sidebar
           isOpen={isSidebarOpen}
           routes={routes}

@@ -162,7 +162,7 @@ export default function Sidebar({
     <div
       className={`${
         isOpen ? 'translate-y-0 lg:translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-y-0 lg:-translate-x-full lg:translate-x-0'
-      } fixed lg:relative bottom-0 lg:top-0 left-0 lg:left-0 h-[85vh] lg:h-full w-full lg:w-80 bg-white shadow-lg z-20 transition-transform duration-300 flex flex-col rounded-t-2xl lg:rounded-none`}
+      } fixed lg:relative bottom-0 lg:top-0 left-0 lg:left-0 h-[50vh] lg:h-full w-full lg:w-80 bg-white shadow-lg z-20 transition-transform duration-300 flex flex-col rounded-t-2xl lg:rounded-none`}
     >
       {/* Mobile drag handle */}
       <div className="lg:hidden flex items-center justify-center py-2 border-b">

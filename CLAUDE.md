@@ -271,6 +271,9 @@ setToast({
 - **Optimization**: Consider code-splitting if adding more features
 - **Mapbox**: Uses WebGL, requires decent GPU
 - **Mobile**: Fully responsive, tested on iOS and Android
+  - Drawer takes 50% of screen height on mobile/tablet (leaving 50% for map interaction)
+  - No overlay blocking map - both drawer and map are interactive simultaneously
+  - Critical for "Choose from map" feature during trip planning
 
 ## Security Considerations
 
